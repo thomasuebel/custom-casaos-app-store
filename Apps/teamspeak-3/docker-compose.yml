@@ -1,0 +1,30 @@
+name: teamspeak3
+
+services:
+  teamspeak-server:
+    container_name: teamspeak-server
+    image: teamspeak:latest
+    restart: unless-stopped
+    environment:
+      - TS3SERVER_LICENSE_AGREEMENT=accept
+      - TZ=UTC
+    ports:
+      - "9987:9987/udp"   # Voice
+      - "10011:10011"      # ServerQuery (raw TCP)
+      - "30033:30033"      # File Transfer
+    volumes:
+      - ts3server_data:/var/ts3server
+
+  teamspeak-manager:
+    container_name: teamspeak-manager
+    image: joni1802/ts3-manager:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"        # Web UI
+    depends_on:
+      - teamspeak-server
+
+volumes:
+  ts3server_data:
+    name: ts3server_data
+    driver: local
