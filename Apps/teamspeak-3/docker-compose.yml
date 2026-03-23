@@ -13,7 +13,7 @@ services:
       - "10011:10011"
       - "30033:30033"
     volumes:
-      - ts3server_data:/var/ts3server
+      - /DATA/AppData/$AppID/server:/var/ts3server
     x-casaos:
       envs:
         - container: TS3SERVER_LICENSE
@@ -51,10 +51,6 @@ services:
           description:
             en_us: ts3-manager web UI
 
-volumes:
-  ts3server_data:
-    name: ts3server_data
-    driver: local
 
 x-casaos:
   architectures:
