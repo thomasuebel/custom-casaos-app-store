@@ -22,7 +22,7 @@ A Docker Compose setup for a self-hosted TeamSpeak 3 server with the [ts3-manage
 
 ### 1. Accept the license
 
-TeamSpeak requires explicit license acceptance. The `TS3SERVER_LICENSE_AGREEMENT=accept` environment variable in `docker-compose.yml` handles this. By deploying this stack you agree to the [TeamSpeak License Agreement](https://www.teamspeak.com/en/teamspeak3-server-license-agreement/).
+TeamSpeak requires explicit license acceptance. The `TS3SERVER_LICENSE=accept` environment variable in `docker-compose.yml` handles this. By deploying this stack you agree to the [TeamSpeak License Agreement](https://www.teamspeak.com/en/teamspeak3-server-license-agreement/).
 
 ### 2. Start the stack
 
@@ -53,7 +53,13 @@ Use your host IP or domain and port `9987` (UDP) in your TeamSpeak client.
 
 ## Data
 
-Server data (database, logs, uploaded files) is persisted in the `ts3server_data` Docker volume.
+Server data (database, logs, uploaded files) is persisted to `/DATA/AppData/teamspeak3/server` on the host (via the bind mount on `/var/ts3server` inside the container). Uploaded files and channel/avatar icons are stored in the `files/` subdirectory within that path.
+
+## File Transfers & Avatars
+
+If clients cannot upload files or avatars, the cause is usually the server advertising its internal Docker IP for file transfer connections instead of the host IP. The `TS3SERVER_IP=0.0.0.0` environment variable forces the server to bind and advertise on all interfaces, making port `30033` reachable from outside the container.
+
+If you are running behind a NAT or reverse proxy, you may need to set `TS3SERVER_IP` to your actual public or LAN IP address instead of `0.0.0.0`.
 
 ## License
 
