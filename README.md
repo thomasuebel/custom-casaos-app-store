@@ -1,78 +1,93 @@
-# TeamSpeak 3 + ts3-manager
+# TeamSpeak 3 Docker Compose
 
-A Docker Compose setup for a self-hosted TeamSpeak 3 server with the [ts3-manager](https://github.com/joni1802/ts3-manager) web interface. Compatible with CasaOS, ZimaOS, and other Docker app stores via the included `app.json`.
+A self-hosted [TeamSpeak 3](https://www.teamspeak.com) server with the [ts3-manager](https://github.com/joni1802/ts3-manager) web interface, packaged as a single `docker-compose.yml`.
 
-## Services
-
-| Service | Image | Description |
-|---|---|---|
-| `teamspeak-server` | `teamspeak:latest` | TeamSpeak 3 voice server |
-| `teamspeak-manager` | `joni1802/ts3-manager:latest` | Web-based administration UI |
-
-## Ports
-
-| Port | Protocol | Description |
-|---|---|---|
-| `9987` | UDP | Voice (connect clients here) |
-| `10011` | TCP | ServerQuery (raw TCP) |
-| `10022` | TCP | ServerQuery (SSH) |
-| `30033` | TCP | File transfer |
-| `8080` | TCP | ts3-manager web UI |
-
-## Getting Started
-
-### 1. Accept the license
-
-TeamSpeak requires explicit license acceptance. The `TS3SERVER_LICENSE=accept` environment variable in `docker-compose.yml` handles this. By deploying this stack you agree to the [TeamSpeak License Agreement](https://www.teamspeak.com/en/teamspeak3-server-license-agreement/).
-
-### 2. Start the stack
+## Quick Start
 
 ```bash
 docker compose up -d
 ```
 
-### 3. Get the ServerQuery admin token
+That's it. The stack starts a TeamSpeak 3 server on the standard ports, plus a web-based admin UI on port `8080`.
 
-On first start, TeamSpeak generates a one-time admin token. Retrieve it from the container's logs:
+On first start, retrieve the one-time ServerQuery admin token from the logs:
 
 ```bash
 docker logs teamspeak-server 2>&1 | grep token
 ```
 
-### 4. Connect ts3-manager
+Then open `http://<your-host>:8080`, connect to host `teamspeak-server`, port `10011`, username `serveradmin`, and paste the token as the password.
 
-Open `http://<your-host>:8080` in your browser and connect to the TeamSpeak server using:
+## Ports
 
-- **Host:** `teamspeak-server` (internal Docker service name)
-- **Port:** `10011`
-- **Username:** `serveradmin`
-- **Password/Token:** from step 3
+| Port | Protocol | Description |
+|---|---|---|
+| `9987` | UDP | Voice — point your TeamSpeak client here |
+| `10011` | TCP | ServerQuery (raw TCP) |
+| `10022` | TCP | ServerQuery (SSH) |
+| `30033` | TCP | File transfer |
+| `8080` | TCP | ts3-manager web UI |
 
-### 5. Connect a TeamSpeak client
+## Configuration
 
-Use your host IP or domain and port `9987` (UDP) in your TeamSpeak client.
+All configuration is done via environment variables in `docker-compose.yml`.
+
+| Variable | Default | Description |
+|---|---|---|
+| `TS3SERVER_LICENSE` | `accept` | Must be `accept` to agree to the [TeamSpeak license](https://www.teamspeak.com/en/teamspeak3-server-license-agreement/) |
+| `TZ` | `UTC` | Timezone (e.g. `Europe/Amsterdam`) |
+| `TS3SERVER_IP` | `0.0.0.0` | IP the server binds and advertises. Set to your LAN/public IP if behind NAT |
+| `TS3SERVER_QUERY_PROTOCOLS` | `raw,ssh` | Enabled ServerQuery protocols. `raw` = port 10011, `ssh` = port 10022 |
 
 ## Data
 
-Server data (database, logs, uploaded files) is persisted to `/DATA/AppData/teamspeak3/server` on the host (via the bind mount on `/var/ts3server` inside the container). Uploaded files and channel/avatar icons are stored in the `files/` subdirectory within that path.
+Server data is persisted to `/DATA/AppData/teamspeak3/server` on the host, mounted at `/var/ts3server` inside the container. This includes the database, logs, and uploaded files.
 
 ## File Transfers & Avatars
 
-If clients cannot upload files or avatars, the cause is usually the server advertising its internal Docker IP for file transfer connections instead of the host IP. The `TS3SERVER_IP=0.0.0.0` environment variable forces the server to bind and advertise on all interfaces, making port `30033` reachable from outside the container.
-
-If you are running behind a NAT or reverse proxy, you may need to set `TS3SERVER_IP` to your actual public or LAN IP address instead of `0.0.0.0`.
+If clients cannot upload files or avatars, the server is likely advertising its internal Docker IP. `TS3SERVER_IP=0.0.0.0` fixes this by binding to all interfaces. If you are behind NAT or a reverse proxy, set `TS3SERVER_IP` to your actual public or LAN IP instead.
 
 ## ServerQuery SSH
 
-TeamSpeak supports an SSH-based ServerQuery interface on port `10022` as a secure alternative to the raw TCP interface on port `10011`. SSH ServerQuery is enabled by default in this stack via the `TS3SERVER_QUERY_PROTOCOLS=raw,ssh` environment variable.
-
-On first start with SSH enabled, the server generates an SSH host key at `/var/ts3server/ssh_host_rsa_key`. To connect via SSH ServerQuery:
+SSH ServerQuery is enabled by default via `TS3SERVER_QUERY_PROTOCOLS=raw,ssh`. On first start the server generates an SSH host key at `/var/ts3server/ssh_host_rsa_key`.
 
 ```bash
 ssh -p 10022 serveradmin@<your-host>
 ```
 
-To disable SSH ServerQuery, change `TS3SERVER_QUERY_PROTOCOLS` to `raw`.
+To disable it, set `TS3SERVER_QUERY_PROTOCOLS=raw`.
+
+## App Store Compatibility
+
+The `Apps/teamspeak-3/` directory contains an `app.json` that makes this stack installable from Docker app stores and home lab platforms:
+
+| Platform | Support |
+|---|---|
+| CasaOS / ZimaOS | via `x-casaos` extensions in `docker-compose.yml` + `app.json` |
+| Portainer | via `app.json` |
+| Runtipi | via `app.json` |
+| Dockge | via `app.json` |
+| Cosmos | via `app.json` |
+| Umbrel | via `app.json` |
+
+App stores that install from a URL expect a `.zip` containing both `docker-compose.yml` and `app.json`. GitHub releases provide this — see below.
+
+## Releases
+
+Releases are built with `build.sh`, which packages `docker-compose.yml` and `Apps/teamspeak-3/app.json` into `teamspeak-3.zip`. This zip is attached to each GitHub release and used by app stores for one-click installation.
+
+To cut a release:
+
+1. Update the version in `app.json` (`metadata.version`) and the image tag in `docker-compose.yml`
+2. Run `./build.sh` to produce `teamspeak-3.zip`
+3. Tag and push:
+   ```bash
+   git tag v<version>
+   git push origin v<version>
+   ```
+4. Create a GitHub release for that tag and attach `teamspeak-3.zip`
+
+App stores that support GitHub release URLs can then install directly from the release asset.
 
 ## License
 
@@ -80,4 +95,4 @@ MIT — see [LICENSE](LICENSE).
 
 TeamSpeak is a product of TeamSpeak Systems GmbH and subject to its own [license agreement](https://www.teamspeak.com/en/teamspeak3-server-license-agreement/).
 
-A big thank you to [Jonathan Francke](https://github.com/joni1802) for building and maintaining [ts3-manager](https://github.com/joni1802/ts3-manager), released under the MIT license.
+Thanks to [Jonathan Francke](https://github.com/joni1802) for [ts3-manager](https://github.com/joni1802/ts3-manager), released under the MIT license.
