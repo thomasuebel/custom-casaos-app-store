@@ -77,6 +77,28 @@ The `Apps/teamspeak-3/` directory contains an `app.json` that makes this stack i
 
 App stores that install from a URL expect a `.zip` containing both `docker-compose.yml` and `app.json`. GitHub releases provide this — see below.
 
+## Installation on CasaOS
+
+1. **Copy the CasaOS release URL from GitHub.** Go to the [latest release](../../releases/latest), right-click `teamspeak-3-casaos.zip` and copy the download URL.
+
+   ![Copy the CasaOS release build URL from GitHub](.github/assets/step-00-copy-the-casa-os-release-build-url-from-github.png)
+
+2. **Open the CasaOS App Store.**
+
+   ![Open CasaOS AppStore](.github/assets/step-01-open-casa-os-appstore.png)
+
+3. **Locate the app store source selector.**
+
+   ![Locate app store selection](.github/assets/step-02-locate-app-store-selection.png)
+
+4. **Select "More Apps".**
+
+   ![Select More Apps](.github/assets/step-03-select-more-apps.png)
+
+5. **Paste the URL into the input field and install.**
+
+   ![Paste the URL into the input field](.github/assets/step-04-paste-the-url-into-the-input-field.png)
+
 ## Releases
 
 Releases are built with `build.sh`, which packages `docker-compose.yml` and `Apps/teamspeak-3/app.json` into `teamspeak-3.zip`. This zip is attached to each GitHub release and used by app stores for one-click installation.
